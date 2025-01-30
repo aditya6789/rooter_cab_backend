@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO Customer and Driver</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #role-selection, #customer-interface, #driver-interface { margin: 20px; }
+        #customer-interface, #driver-interface { display: none; }
+    </style>
+    <!-- Add the script for the Google Maps Extended Component Library -->
+    <script type="module" src="https://unpkg.com/@googlemaps/extended-component-library@0.6"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; }
+        .place-picker-container { padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="role-selection">
+        <h1>Select Your Role</h1>
+        <button id="customer-button">Customer</button>
+        <button id="driver-button">Driver</button>
+    </div>
+
+    <div id="customer-interface">
+        <h2>Customer Interface</h2>
+        <label for="pickup-location">Pickup Location:</label>
+        <input type="text" id="pickup-location" placeholder="Enter pickup location">
+        <label for="dropoff-location">Dropoff Location:</label>
+        <input type="text" id="dropoff-location" placeholder="Enter dropoff location">
+        <button id="send-request">Send Request</button>
+        <div id="customer-messages"></div>
+    </div>
+
+    <div id="driver-interface">
+        <h2>Driver Interface</h2>
+        <button id="register-driver">Register as Driver</button>
+        <div id="driver-messages"></div>
+        <label for="otp-input">Enter OTP to start the ride:</label>
+        <input type="text" id="otp-input" placeholder="Enter OTP">
+        <button id="start-ride">Start Ride</button>
+        <button id="complete-ride">Complete Ride</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        let socket;
+        let currentRide = null;
+        let pickupLocationCoords = {};
+        let dropoffLocationCoords = {};
+
+        document.getElementById('customer-button').addEventListener('click', () => {
+            document.getElementById('role-selection').style.display = 'none';
+            document.getElementById('customer-interface').style.display = 'block';
+            setupSocket('customer');
+        });
+
+        document.getElementById('driver-button').addEventListener('click', () => {
+            document.getElementById('role-selection').style.display = 'none';
+            document.getElementById('driver-interface').style.display = 'block';
+            setupSocket('driver');
+        });
+
+        function setupSocket(role) {
+            socket = io('http://localhost:5000');
+
+            socket.on('connect', () => {
+                console.log(`Connected as ${role}`);
+            });
+
+            if (role === 'driver') {
+                document.getElementById('register-driver').addEventListener('click', () => {
+                    socket.emit('register', { role: 'driver', location: { latitude: '37.7749', longitude: '-122.4194' } });
+                });
+
+                socket.on('ride-request', (data) => {
+                    const messages = document.getElementById('driver-messages');
+                    messages.innerHTML += `<p>Request received: Pickup - ${data.ride.pickupLocation.latitude}, ${data.ride.pickupLocation.longitude}, Dropoff - ${data.ride.dropLocation.latitude}, ${data.ride.dropLocation.longitude}</p>`;
+                    // Display accept/decline buttons
+                    messages.innerHTML += '<button id="accept-ride">Accept Ride</button><button id="decline-ride">Decline Ride</button>';
+                    
+                    document.getElementById('accept-ride').addEventListener('click', () => {
+                        socket.emit('ride-accepted', { rideId: data.ride.id });
+                        currentRide = data.ride;
+                        messages.innerHTML += '<p>Ride accepted</p>';
+                        // Clear buttons
+                        document.getElementById('accept-ride').remove();
+                        document.getElementById('decline-ride').remove();
+                    });
+
+                    document.getElementById('decline-ride').addEventListener('click', () => {
+                        // Clear buttons
+                        document.getElementById('accept-ride').remove();
+                        document.getElementById('decline-ride').remove();
+                        messages.innerHTML += '<p>Ride declined</p>';
+                    });
+                });
+            } else if (role === 'customer') {
+                socket.on('otp', (data) => {
+                    const messages = document.getElementById('customer-messages');
+                    messages.innerHTML += `<p>Your OTP is: ${data.otp}</p>`;
+                });
+            }
+        }
+
+        document.getElementById('send-request').addEventListener('click', () => {
+            fetch('/api/ride/book-ride', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pickupLocation: pickupLocationCoords,
+                    dropLocation: dropoffLocationCoords
+                })
+            }).then(response => response.json()).then(data => {
+                currentRide = data.ride;
+                const messages = document.getElementById('customer-messages');
+                messages.innerHTML += `<p>${data.message}</p>`;
+            });
+        });
+
+        document.getElementById('start-ride').addEventListener('click', () => {
+            const otp = document.getElementById('otp-input').value;
+            fetch('/api/ride/start-ride', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rideId: currentRide.id, otp })
+            }).then(response => response.text()).then(data => {
+                const messages = document.getElementById('driver-messages');
+                messages.innerHTML += `<p>${data}</p>`;
+            });
+        });
+
+        document.getElementById('complete-ride').addEventListener('click', () => {
+            if (currentRide) {
+                fetch('/api/ride/complete-ride', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rideId: currentRide.id })
+                }).then(response => response.text()).then(data => {
+                    const messages = document.getElementById('driver-messages');
+                    messages.innerHTML += `<p>${data}</p>`;
+                });
+            }
+        });
+
+        function init() {
+            const pickupInput = document.getElementById('pickup-location');
+            const dropoffInput = document.getElementById('dropoff-location');
+            const options = { types: ['geocode'], componentRestrictions: { country: 'in' } };
+            const autocompletePickup = new google.maps.places.Autocomplete(pickupInput, options);
+            const autocompleteDropoff = new google.maps.places.Autocomplete(dropoffInput, options);
+
+            autocompletePickup.addListener('place_changed', () => {
+                const place = autocompletePickup.getPlace();
+                pickupLocationCoords = {
+                    latitude: place.geometry.location.lat(),
+                    longitude: place.geometry.location.lng()
+                };
+            });
+
+            autocompleteDropoff.addListener('place_changed', () => {
+                const place = autocompleteDropoff.getPlace();
+                dropoffLocationCoords = {
+                    latitude: place.geometry.location.lat(),
+                    longitude: place.geometry.location.lng()
+                };
+            });
+        }
+    </script>
+    <!-- Include the Google Maps API script with your API key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdXyAkWjkhUlWXBbpkieWRi2OV47AbVFE&libraries=places&callback=init" async defer></script>
+</body>
+</html>
