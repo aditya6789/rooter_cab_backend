@@ -96,6 +96,13 @@ connectDB()
         console.log(data.customerId);
         const user = await User.findOne({ _id: data.customerId });
         await SocketConnection.deleteMany({ userId: data.customerId });
+        
+        await SocketConnection.deleteMany({ socketId: socket.id });
+        const socketconnect = await SocketConnection.findOne({ socketId: socket.id });
+        if (socketconnect) {
+          await socketconnect.deleteOne({ socketId: socket.id });
+        }
+        
         if (user) {
           await new SocketConnection({
             socketId: socket.id,
@@ -118,7 +125,12 @@ connectDB()
             const user = await User.findOne({ _id: data.driverId });
             if (user) {
               // Deleting Previous Entries
-              await SocketConnection.deleteMany({ userId: data.driverId });
+              await SocketConnection.deleteMany({ userId: user._id });
+              await SocketConnection.deleteMany({ socketId: socket.id });
+              const socketconnect = await SocketConnection.findOne({ socketId: socket.id });
+              if (socketconnect) {
+                await socketconnect.deleteOne({ socketId: socket.id });
+              }
               await new SocketConnection({
                 socketId: socket.id,
                 userId: user._id,

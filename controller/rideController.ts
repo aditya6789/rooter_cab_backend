@@ -211,8 +211,13 @@ export const RideController = {
       }
       const vehicleCategory = await VehicleCategory.findOne({ name: vehicleType });
       const defaultPrice = directions!.distance! + directions!.tollCost!;
+      const categoryprice = defaultPrice * Number(vehicleCategory?.price);
+      const price = categoryprice / 1000;
+      console.log("vehicleCategory", vehicleCategory);
       console.log("defaultPrice", defaultPrice);
-      const price = defaultPrice / 100;
+      console.log("categoryprice", categoryprice);
+      console.log("vehicleType price", vehicleCategory?.price);
+
       console.log("price", price);
 
 
@@ -370,7 +375,10 @@ export const RideController = {
     }
 
     const ride = rides[rideIndex];
+    console.log("completing ride", ride);
     ride.status = "completed";
+    await Ride.findByIdAndUpdate(ride._id, { status: "completed" });
+    console.log("ride status updated", ride.status);
 
     const driver = await findDriverById(ride.driverId!);
     if (!driver) {
@@ -523,7 +531,7 @@ export const RideController = {
     }
 
     ride.status = "ongoing";
-
+    await Ride.findByIdAndUpdate(ride._id, { status: "ongoing" });
     try {
       // Find the customer's socket connection
       const customerConnection = await SocketConnection.findOne({
@@ -577,6 +585,7 @@ export const RideController = {
 
     const ride = rides[rideIndex];
     ride.status = "cancelled";
+    await Ride.findByIdAndUpdate(ride._id, { status: "cancelled" });
 
     const cancelRide = new CancelRide(req.body);
     await cancelRide.save(); // Ensure save completes
