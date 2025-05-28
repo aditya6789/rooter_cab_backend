@@ -1,7 +1,8 @@
 import { json } from "stream/consumers";
 import { Make, Vehicle, VehicleCategory, VehicleModel } from "../models/vechileModel";
 import express from "express";
-
+import CustomErrorHandler from "../services/customErrorHandler";
+import AuthenticatedRequest from "../middleware/types/request";
 export const getAllMakes = async (
   req: express.Request,
   res: express.Response
@@ -36,9 +37,17 @@ export const getVehicleModelsByMakeId = async (
 
 // Create a Make
 export const createMake = async (
-  req: express.Request,
-  res: express.Response
+  req: AuthenticatedRequest,
+  res: express.Response,
+  next: express.NextFunction
 ) => {
+  if(!req.user || req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
+  if(req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
   const { name , vehicleType , logo } = req.body;
   console.log(logo);
   console.log(name);
@@ -89,9 +98,17 @@ export const getMakeById = async (
 
 // Update a Make by ID
 export const updateMake = async (
-  req: express.Request,
-  res: express.Response
+    req: AuthenticatedRequest,
+  res: express.Response,
+  next: express.NextFunction
 ) => {
+  if(!req.user || req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
+  if(req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
   const { id } = req.params;
   const { name } = req.body;
   const logo = req.file?.path;
@@ -115,13 +132,21 @@ export const updateMake = async (
 
 // Delete a Make by ID
 export const deleteMake = async (
-  req: express.Request,
-  res: express.Response
+  req:AuthenticatedRequest,
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   const { id } = req.params;
+  if(!req.user || req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
+  if(req.user.role !== "admin"){
+    return next(CustomErrorHandler.unAuthorized());
+  }
   try {
     const make = await Make.findByIdAndDelete(id);
-    if (!make) {
+    if   (!make) {
       return res.status(404).json({ error: "Make not found" });
     }
     res.status(200).json(make);
@@ -135,7 +160,8 @@ export const deleteMake = async (
 // Create a Vehicle Model
 export const createVehicleModel = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   const { make, name , category , image } = req.body;
 
@@ -191,7 +217,8 @@ export const getVehicleModelById = async (
 // Update a Vehicle Model by ID
 export const updateVehicleModel = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   const { id } = req.params;
   const { make, name , price } = req.body;
@@ -217,7 +244,8 @@ export const updateVehicleModel = async (
 // Delete a Vehicle Model by ID
 export const deleteVehicleModel = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   const { id } = req.params;
   try {
@@ -234,7 +262,7 @@ export const deleteVehicleModel = async (
 };
 
 export const VehicleCategoryController = {
-  async createVehicleCategory(req: express.Request, res: express.Response) {
+  async createVehicleCategory(req: express.Request, res: express.Response, next: express.NextFunction) {
     const { name, capacity , price } = req.body;
 
     try {
@@ -248,7 +276,7 @@ export const VehicleCategoryController = {
     }
   },
 
-  async updateVehicleCategory(req: express.Request, res: express.Response) {
+  async updateVehicleCategory(req: express.Request, res: express.Response, next: express.NextFunction) {
     const { id } = req.params;
     const { name, capacity } = req.body;
 
@@ -269,7 +297,7 @@ export const VehicleCategoryController = {
     }
   },
 
-  async deleteVehicleCategory(req: express.Request, res: express.Response) {
+  async deleteVehicleCategory(req: express.Request, res: express.Response, next: express.NextFunction) {
     const { id } = req.params;
     try {
       const vehicleCategory = await VehicleCategory.findByIdAndDelete(id);
@@ -283,7 +311,7 @@ export const VehicleCategoryController = {
         .json({ error: "An error occurred while deleting the vehicle model." });
     }
   },
-  async getAllVehiclecategory(req: express.Request, res: express.Response) {
+  async getAllVehiclecategory(req: express.Request, res: express.Response, next: express.NextFunction) {
     try {
       const vehicleCategory = await VehicleCategory.find(); // Ensure await is used here
       res.status(200).json(vehicleCategory);

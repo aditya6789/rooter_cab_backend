@@ -11,6 +11,8 @@ export  interface ISocketConnection extends Document {
   location?: Location | null;
   userType?: String | null;
   vehicleType?: String | null;
+  available?: Boolean | null;
+  isActive?: Boolean | null;
 }
 
 const socketConnectionSchema = new Schema({
@@ -22,6 +24,8 @@ const socketConnectionSchema = new Schema({
   },
   userType: { type: String, required: false },
   vehicleType: { type: String, required: false },
+  available: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false },
 });
 
 const SocketConnection = model<ISocketConnection>('SocketConnection', socketConnectionSchema);

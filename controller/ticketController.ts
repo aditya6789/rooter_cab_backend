@@ -1,11 +1,20 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Ticket, { ITicket } from '../models/ticketModel';
 import User from '../models/userModel';
+import CustomErrorHandler from '../services/customErrorHandler';
+import AuthenticatedRequest from '../middleware/types/request';
 
 export const TicketController = {
-    async createTicket(req: Request, res: Response) {
+    async createTicket(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        if(!req.user){
+            return next(CustomErrorHandler.unAuthorized());
+        }
+        const userId= req.user._id;
+        if(req.user.role !== "admin"){
+            return next(CustomErrorHandler.unAuthorized());
+        }
         try {
-            const { userId, subject, description, priority } = req.body;
+            const { subject, description, priority } = req.body;
 
             // Generate a unique ticketId (e.g., TKT-2024-0001)
             const ticketCount = await Ticket.countDocuments();
@@ -87,7 +96,14 @@ export const TicketController = {
         }
     },
 
-    async updateTicket(req: Request, res: Response) {
+    async updateTicket(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        if(!req.user){
+            return next(CustomErrorHandler.unAuthorized());
+        }
+        const userId= req.user._id;
+        if(req.user.role !== "admin"){
+            return next(CustomErrorHandler.unAuthorized());
+        }   
         try {
             const { status, priority, updatedBy, message } = req.body;
 
@@ -134,9 +150,12 @@ export const TicketController = {
         }
     },
 
-    async getUserTickets(req: Request, res: Response) {
+    async getUserTickets(req: AuthenticatedRequest, res: Response, next: NextFunction   ) {
+        if(!req.user){
+            return next(CustomErrorHandler.unAuthorized());
+        }
+        const userId= req.user._id;
         try {
-            const { userId } = req.params;
             const tickets = await Ticket.find({ userId })
                 .populate('assignedTo', 'full_name')
                 .populate('updates.updatedBy', 'full_name')
@@ -154,10 +173,9 @@ export const TicketController = {
                 error: error.message
             });
         }
-    }
+    },
 
-    ,
-    async searchUserByPhone(req: Request, res: Response) {
+    async searchUserByPhone(req: Request, res: Response, next: NextFunction) {
         try {
             const { phone } = req.query;
 

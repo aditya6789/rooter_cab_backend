@@ -21,7 +21,9 @@ import emergencyContactRoute from "./emergencyContactRoute";
 import adminDashboardRoute from "./adminDashboardRoute";
 import imageUploadRoute from "./image_uploadRoute";
 import socketConnectionRouter from "./socket_connectionRoute";
-
+import bannerRoutes from "./bannerRoutes";
+import locationRoutes from "./locationRoute";
+import razorpayRoutes from "./razorpay.routes";
 export const router = express.Router();
 
 router.use("/auth", authRouter);
@@ -44,3 +46,6 @@ router.use("/emergency-contact", emergencyContactRoute);
 router.use("/admin", adminDashboardRoute);
 router.use("/image-upload", imageUploadRoute);
 router.use("/socket-connection", socketConnectionRouter);
+router.use("/banner", bannerRoutes);
+router.use("/location", locationRoutes);
+router.use("/razorpay", razorpayRoutes);

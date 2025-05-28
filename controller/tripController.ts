@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import Trip from '../models/tripModel';
 import User from '../models/userModel';
-
+import CustomErrorHandler from '../services/customErrorHandler';
+import AuthenticatedRequest from '../middleware/types/request';
+import { NextFunction } from 'express';
 // Interface for request body
 interface TripRequest {
   customerId?: string;
@@ -11,7 +13,14 @@ interface TripRequest {
 // Controller functions
 const TripController = {
   // Find trips related to a customer
-  findTripsForCustomer: async (req: Request, res: Response) => {
+  findTripsForCustomer: async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
+    if(req.user.role !== "admin"){
+      return next(CustomErrorHandler.unAuthorized());
+    }
     const { customerId } = req.query;
     console.log(customerId);
 
@@ -37,11 +46,17 @@ const TripController = {
   },
 
   // Find trips related to a driver
-  findTripsForDriver: async (req: Request, res: Response) => {
-    const { driverId } = req.params;
+  findTripsForDriver: async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
+    if(req.user.role !== "driver"){
+      return next(CustomErrorHandler.unAuthorized());
+    }
 
     try {
-      const trips = await Trip.find({driverId:driverId}).populate({
+        const trips = await Trip.find({driverId:userId}).populate({
         path: 'rideId',
         model: 'Ride' 
       });

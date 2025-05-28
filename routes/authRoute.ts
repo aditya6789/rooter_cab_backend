@@ -56,13 +56,13 @@ authRouter.post(
 authRouter.post(
   "/assign-vehicle",
   async (req: Request, res: Response, next: NextFunction) => {
-    await RegisterController.assignVehicleToUser(req, res);
+    await RegisterController.assignVehicleToUser(req, res, next);
   }
 );
 authRouter.get(
   "/get-vehicle/:userId",
   async (req: Request, res: Response, next: NextFunction) => {
-    await RegisterController.getVehiclesOfUser(req, res);
+    await RegisterController.getVehiclesOfUser(req, res, next);
   }
 );
 

@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
 import Review, { IReview } from '../models/reviewModel';
 import Ride from '../models/rideModel';
-
+import AuthenticatedRequest from '../middleware/types/request';
+import CustomErrorHandler from '../services/customErrorHandler';
+import { NextFunction } from 'express';
 // Create a review
-const createReview = async (req: Request, res: Response): Promise<void> => {
+const createReview = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if(!req.user){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   try {
-    const { rideId, fromUserId, toUserId, rating, comment, reviewType } = req.body;
+    const { rideId, toUserId, rating, comment, reviewType } = req.body;
 
     // Validate ride exists
     const ride = await Ride.findById(rideId);
@@ -15,7 +21,7 @@ const createReview = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Check for existing review
-    const existingReview = await Review.findOne({ rideId, fromUserId });
+    const existingReview = await Review.findOne({ rideId, fromUserId:userId });
     if (existingReview) {
       res.status(400).json({ message: 'You have already reviewed this ride' });
       return;
@@ -23,7 +29,7 @@ const createReview = async (req: Request, res: Response): Promise<void> => {
 
     const review = new Review({
       rideId,
-      fromUserId,
+      fromUserId:userId,
       toUserId,
       rating,
       comment,
@@ -38,9 +44,12 @@ const createReview = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Get all reviews for a user (received reviews)
-const getUserReviews = async (req: Request, res: Response): Promise<void> => {
+const getUserReviews = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if(!req.user){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   try {
-    const { userId } = req.params;
     const reviews = await Review.find({ toUserId: userId })
       .populate('fromUserId', 'full_name profile_image')
       .populate('rideId', 'pickupLocation dropLocation createdAt');
@@ -72,13 +81,17 @@ const getRideReviews = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Update a review
-const updateReview = async (req: Request, res: Response): Promise<void> => {
+const updateReview = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if(!req.user){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   try {
     const { rating, comment } = req.body;
     const review = await Review.findOneAndUpdate(
       { 
         _id: req.params.id,
-        fromUserId: req.body.userId // Ensure user can only update their own review
+        fromUserId: userId // Ensure user can only update their own review
       },
       { rating, comment },
       { new: true }
@@ -96,11 +109,15 @@ const updateReview = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Delete a review
-const deleteReview = async (req: Request, res: Response): Promise<void> => {
+const deleteReview = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if(!req.user){
+    return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   try {
     const review = await Review.findOneAndDelete({
       _id: req.params.id,
-      fromUserId: req.body.userId // Ensure user can only delete their own review
+      fromUserId: userId // Ensure user can only delete their own review
     });
 
     if (!review) {

@@ -1,8 +1,9 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { generateReferralCode } from "../utils/generate_referal_code";
 import User from "../models/userModel";
 import DriverReferals from "../models/driverReferalsModel";
-
+import AuthenticatedRequest from "../middleware/types/request";
+import CustomErrorHandler from "../services/customErrorHandler";
 interface IUser {
   full_name: string;
   email: string;
@@ -15,8 +16,12 @@ interface ReferredDriver {
 }
 
 // Generate Referral Code API
-export const getReferralCode = async (req: Request, res: Response) => {
-    console.log("getReferralCode", req.body);
+export const getReferralCode = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if(!req.user || req.user.role !== "driver"){
+      return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
+  console.log("getReferralCode", req.body);
   const { driverId } = req.params; // driverId is the User._id
 
   try {
@@ -70,9 +75,13 @@ export const getReferralCode = async (req: Request, res: Response) => {
 };
 
 // Fetch Referral Network API
-export const fetchReferralNetwork = async (req: Request, res: Response) => {
+export const fetchReferralNetwork = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if(!req.user || req.user.role !== "driver"){
+      return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   const { referralCode } = req.params;
-
+    
   try {
     // Find the driver with the given referral code
     const driver = await DriverReferals.findOne({ referralCode }).populate("referrals", "driverId referralCode");

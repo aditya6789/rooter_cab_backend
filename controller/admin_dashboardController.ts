@@ -34,7 +34,7 @@ export const AdminDashboardController = {
             const overviewCards = [
                 {
                     title: "Total Revenue",
-                    value: `$${totalRevenue.toFixed(2)}`,
+                    value: `₹${totalRevenue.toFixed(2)}`,
                     description: `${revenueGrowth.toFixed(1)}% from last month`,
                     trend: revenueGrowth > 0 ? "up" : "down",
                     icon: "DollarSign",

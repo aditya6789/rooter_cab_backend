@@ -18,13 +18,18 @@ export interface IRequest extends Request {
 
 const auth = async (req: IRequest, res: Response, next: NextFunction) => {
   let authHeader = req.headers.authorization;
+
+  console.log("req.originalUrl:", req.originalUrl);
+  console.log("req.headers:", req.headers);
+
   // ignore login and register routes
   if (
     req.originalUrl.includes("login") ||
     req.originalUrl.includes("register") ||
     req.originalUrl.includes("validate-otp") ||
-    req.originalUrl.includes("send-otp")||
-    req.originalUrl.includes("driver-register")
+    req.originalUrl.includes("send-otp") ||
+    req.originalUrl.includes("driver-register") ||
+    req.originalUrl.includes("image-upload")
   ) {
     console.log("req.originalUrl:", req.originalUrl);
     console.log("Skipping authentication for login and register routes");

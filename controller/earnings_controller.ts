@@ -1,12 +1,16 @@
-import { Request, Response } from 'express';
+  import { NextFunction, Request, Response } from 'express';
 import Ride from '../models/rideModel';
 import moment from 'moment'; // For handling date comparisons
-
+import AuthenticatedRequest from '../middleware/types/request';
+import CustomErrorHandler from '../services/customErrorHandler';
 /**
  * Get earnings for today, this week, and this month.
  */
-export const getEarnings = async (req: Request, res: Response) => {
-  const { driverId } = req.params;
+export const getEarnings = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if(!req.user || req.user.role !== "admin"){
+      return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
 
   try {
     // Get today's date at midnight (start of the day)
@@ -18,7 +22,7 @@ export const getEarnings = async (req: Request, res: Response) => {
     
     // Find today's completed rides
     const todayRides = await Ride.find({
-      driverId,
+      driverId:userId,
       status: 'completed',
       createdAt: { $gte: today.toDate() },
     });
@@ -27,7 +31,7 @@ export const getEarnings = async (req: Request, res: Response) => {
 
     // Find this week's completed rides
     const weeklyRides = await Ride.find({
-      driverId,
+      driverId:userId,
       status: 'completed',
       createdAt: { $gte: startOfWeek.toDate() },
     });
@@ -36,7 +40,7 @@ export const getEarnings = async (req: Request, res: Response) => {
 
     // Find this month's completed rides
     const monthlyRides = await Ride.find({
-      driverId,
+      driverId:userId,
       status: 'completed',
       createdAt: { $gte: startOfMonth.toDate() },
     });

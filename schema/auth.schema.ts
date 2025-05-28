@@ -18,6 +18,7 @@ export const registerSchema = Joi.object({
   email: Joi.string().email().required(),
 });
 
+
 export const driverRegisterSchema = Joi.object({
   full_name: Joi.string().max(50).required(),
   email: Joi.string().email().required(),

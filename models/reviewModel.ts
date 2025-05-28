@@ -10,32 +10,32 @@ export interface IReview extends Document {
 }
 
 const reviewSchema: Schema = new Schema({
-  rideId: { 
-    type: Schema.Types.ObjectId, 
+  rideId: {
+    type: Schema.Types.ObjectId,
     ref: 'Ride',
-    required: true 
+    required: true
   },
-  fromUserId: { 
-    type: Schema.Types.ObjectId, 
+  fromUserId: {
+    type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true 
+    required: true
   },
-  toUserId: { 
-    type: Schema.Types.ObjectId, 
+  toUserId: {
+    type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true 
+    required: true
   },
-  rating: { 
-    type: Number, 
+  rating: {
+    type: Number,
     required: true,
     min: 1,
-    max: 5 
+    max: 5
   },
-  comment: { 
-    type: String, 
-    required: true,
+  comment: {
+    type: String,
+    required: false,
     trim: true,
-    maxlength: 500 
+    maxlength: 500
   },
   reviewType: {
     type: String,

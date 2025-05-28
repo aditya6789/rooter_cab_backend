@@ -13,7 +13,7 @@ export interface IRide {
   pickupLocation: Location;
   dropLocation: Location;
   driverLocation?: Location;
-  status: 'pending' | 'accepted' | 'completed' | 'ongoing' | 'cancelled';
+  status: 'pending' | 'accepted' | 'completed' | 'ongoing' | 'cancelled' | 'arrived_at_pickup';
   price: number;
   driverId: string | null;
   otp: string | null;
@@ -42,25 +42,25 @@ const RideSchema = new Schema({
   pickupLocation: {
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true },
-    address:{type:String , required:true},
+    address: { type: String, required: true },
   },
   dropLocation: {
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true },
-    address:{type:String , required:true},
+    address: { type: String, required: true },
 
   },
   driverLocation: {
     latitude: { type: Number },
     longitude: { type: Number },
   },
-  price:{type:Number , required:true},
+  price: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'completed', 'ongoing','cancelled'],
+    enum: ['pending', 'accepted', 'completed', 'ongoing', 'cancelled', 'arrived_at_pickup'],
     required: true,
   },
- 
+
   otp: {
     type: String,
   },
@@ -92,10 +92,10 @@ RideSchema.set('toJSON', {
  * @export
  * @interface ICancelRide
  */
-export interface ICancelRide{
-ride:String;
-cancelReason:String;
-isDriver:boolean;
+export interface ICancelRide {
+  ride: String;
+  cancelReason: String;
+  isDriver: boolean;
 }
 
 const cancelRideSchema = new Schema({
@@ -103,8 +103,8 @@ const cancelRideSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Ride',
   },
-  cancelReason  :{type:String, required:true},
-  isDriver:{type:Boolean, required:true},
+  cancelReason: { type: String, required: true },
+  isDriver: { type: Boolean, required: true },
 
 
 })

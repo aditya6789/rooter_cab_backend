@@ -1,14 +1,20 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Ride from '../models/rideModel';
-
+import AuthenticatedRequest from '../middleware/types/request';
+import CustomErrorHandler from '../services/customErrorHandler';
 // Get earnings for a driver
-export const getDriverEarnings = async (req: Request, res: Response) => {
-    const { driverId } = req.params;
+export const getDriverEarnings = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    console.log("req.user", req.user);
+    if(!req.user){
+        console.log("User not found");
+        return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
 
     try {
         const rides = await Ride.find(
             {
-                 'driverInfo.driverId': driverId,
+            'driverInfo.driverId': userId,
             status: "completed"
             }
         );

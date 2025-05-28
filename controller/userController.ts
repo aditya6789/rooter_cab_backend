@@ -35,10 +35,10 @@ export const UserController = {
     // if (error) {
     //   return next(error);
     // }
-    const profile = req.file?.filename;
-
+   
+ 
     const updateData: any = { ...req.body };
-    if (profile) updateData.profile = profile;
+  
 
     try {
       // Update user information with only the provided fields
@@ -233,7 +233,9 @@ export const UserController = {
   },
   async getDriverProfile(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
+    console.log("id", id);
     const driver = await User.findOne({ _id: id, userType: "driver" });
+    console.log("driver", driver);
     if (!driver) return next(CustomErrorHandler.notFound("Driver not found."));
     res.status(200).json(successResponse("Driver profile fetched successfully", driver));
   },
@@ -241,6 +243,7 @@ export const UserController = {
     const { id } = req.params;
 
     const profile = req.file?.filename;
+    
 
     const updateData: IUser = { ...req.body };
     if (profile) updateData.profile_image = profile;
@@ -293,5 +296,12 @@ export const UserController = {
     user.earnings_type = earnings_type;
     await user.save();
     res.status(200).json(successResponse("Earnings type changed successfully", user));
+  },
+  async createAdminbySuperAdmin(req: Request, res: Response, next: NextFunction) {
+    const { full_name , email , phone  } = req.body;
+    const user = await User.findOne({ email , phone , userType: "admin" });
+    if (user) return next(CustomErrorHandler.alreadyExist("User already exists"));
+    const admin = await User.create({ full_name , email , phone , userType: "admin" });
+    res.status(200).json(successResponse("Admin created successfully", admin));
   }
 };

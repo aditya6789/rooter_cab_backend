@@ -1,9 +1,14 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import User from '../models/userModel';
 import driverTokenModel from '../models/notificationToken';
-
+import CustomErrorHandler from '../services/customErrorHandler';
+import AuthenticatedRequest from '../middleware/types/request';
 // Store FCM token in the database
-export const storeFcmToken = async (req: Request, res: Response) => {
+export const storeFcmToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id;
   console.log(req.body);
   console.log('running');
   try {
@@ -26,11 +31,14 @@ export const storeFcmToken = async (req: Request, res: Response) => {
 };
 
 // Check FCM token for a driver
-export const checkFcmToken = async (req: Request, res: Response) => {
+export const checkFcmToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+  }
+  const userId= req.user._id; 
   try {
-    const { driverId } = req.params;
 
-    const tokenRecord = await driverTokenModel.findOne({ userId: driverId });
+    const tokenRecord = await driverTokenModel.findOne({ userId: userId });
     if (tokenRecord) {
       res.status(200).json({ 
         exists: true,

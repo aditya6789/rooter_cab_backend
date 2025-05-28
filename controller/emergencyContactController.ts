@@ -1,13 +1,19 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import EmergencyContact from '../models/emergencyContactsModel';
 import { sendEmergencySMS } from '../services/smsService';
-
+import axios from 'axios';
+import CustomErrorHandler from '../services/customErrorHandler';  
+import AuthenticatedRequest from '../middleware/types/request';
 const EmergencyContactController = {
   // Add emergency contacts for a user
-  async addEmergencyContacts(req: Request, res: Response): Promise<void> {
+  async addEmergencyContacts(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     console.log("addEmergencyContacts");
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
     try {
-      const { userId, contacts } = req.body;
+      const { contacts } = req.body;
       console.log(userId, contacts);
 
       if (!userId || !contacts || !Array.isArray(contacts)) {
@@ -38,8 +44,12 @@ const EmergencyContactController = {
   },
 
   // Get emergency contacts for a user
-  async getEmergencyContacts(req: Request, res: Response): Promise<void> {
+  async getEmergencyContacts(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     console.log("getEmergencyContacts");
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
     try {
       const { userId } = req.params;
       console.log(userId);
@@ -57,7 +67,11 @@ const EmergencyContactController = {
   },
 
   // Update emergency contacts for a user
-  async updateEmergencyContacts(req: Request, res: Response): Promise<void> {
+  async updateEmergencyContacts(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
     try {
       const { userId } = req.params;
       const { contacts } = req.body;
@@ -85,7 +99,11 @@ const EmergencyContactController = {
   },
 
   // Delete emergency contacts for a user
-  async deleteEmergencyContacts(req: Request, res: Response): Promise<void> {
+  async deleteEmergencyContacts(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
     try {
       const { userId } = req.params;
 
@@ -101,24 +119,33 @@ const EmergencyContactController = {
       res.status(500).json({ message: 'Error deleting emergency contacts', error });
     }
   },
-  async sendEmergencySMS(req: Request, res: Response): Promise<void> {
+  async sendEmergencySMS(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    if(!req.user){
+      return next(CustomErrorHandler.unAuthorized());
+    }
+    const userId= req.user._id;
     try {
-      const {  latitude, longitude , userId } = req.body;
+      const { latitude, longitude } = req.body;
       const emergencyContact = await EmergencyContact.findOne({ userId });
+      
       if (!emergencyContact || !emergencyContact.contacts.length) {
         res.status(404).json({ message: 'No emergency contacts found for this user' });
         return;
       }
 
-      const phones = emergencyContact.contacts.map(contact => contact.phone); // Get all contact phones
+      const phones = emergencyContact.contacts.map(contact => contact.phone);
+      const formattedPhones = phones.map(phone => phone.replace(/\+91\s?/, '').replace(/\s/g, ''));
 
-      // Create a geo URI that works on most mobile devices
-      const mapsLink = `geo:${latitude},${longitude}?q=${latitude},${longitude}(Emergency Location)&mode=d`;
+      // Create Google Maps link
+      const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
       
-      // Alternative format that works well on both Android and iOS
-      const alternateMapsLink = `https://maps.google.com/?q=latitude,longitude`;
+      // Shorten URL using TinyURL
+      const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(mapsLink)}`);
+      const shortUrl = response.data ; // Fallback to original if shortening fails
+
+      console.log(shortUrl);
       
-      await sendEmergencySMS(phones, alternateMapsLink);
+      await sendEmergencySMS(formattedPhones, shortUrl);
       res.status(200).json({ message: 'Emergency SMS sent successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Error sending emergency SMS', error });

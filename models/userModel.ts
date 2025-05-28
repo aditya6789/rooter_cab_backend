@@ -18,7 +18,7 @@ export interface IUser extends Document {
   rc?: string;
   driverlicence?: string;
   contacts?: IContact[];
-  userType: "customer" | "driver" | "admin";
+  userType: "customer" | "driver" | "admin" | "superAdmin";
   earnings_type?: "subscription" | "commission";
   walletBalance: Number;
   trips: Types.ObjectId[]; // Only ObjectId array
@@ -27,6 +27,8 @@ export interface IUser extends Document {
   rating?: number;
   rides?: Array<any>;
   status?: boolean;
+  razorpay_contact_id?: string;
+  razorpay_fund_account_id?: string;
 }
 const ContactSchema = new Schema<IContact>({
   name: { type: String, required: true },
@@ -79,7 +81,7 @@ const UserSchema = new Schema<IUser>({
   contacts: [ContactSchema],
   userType: {
     type: String,
-    enum: ["customer", "driver", "admin"],
+    enum: ["customer", "driver", "admin", "superAdmin"],
     required: true,
     default: "customer",
   },
@@ -108,6 +110,12 @@ const UserSchema = new Schema<IUser>({
   },
   status: {
     type: Boolean,
+  },
+  razorpay_contact_id: {
+    type: String,
+  },
+  razorpay_fund_account_id: {
+    type: String,
   },
 });
 

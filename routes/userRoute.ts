@@ -44,16 +44,18 @@ UserRouter.post('/contacts/:id', async (req: Request, res: Response, next: NextF
   await UserController.getUserContacts(req, res);
 });
 
-UserRouter.put('/update-user/:userId',upload.single("profile"), UserController.updateUser);
+UserRouter.patch('/update-user/:userId', UserController.updateUser);
 
 UserRouter.put('/update-driver/:id',upload.single("profile_image"), UserController.updateDriver);
 
 UserRouter.get('/check-fcm-token/:driverId', checkFcmToken);
 
-UserRouter.post('/store-fcm-token', async (req: Request, res: Response, ) => {
-  await storeFcmToken(req, res, );
+UserRouter.post('/store-fcm-token', async (req: Request, res: Response, next: NextFunction) => {
+  await storeFcmToken(req, res, next);
 });
 
 UserRouter.get('/driver-vehicles/:id', UserController.getDriverVehicles); 
 
 UserRouter.put('/change-earnings-type/:id', UserController.changeEarningsType); 
+
+UserRouter.post('/create-admin', UserController.createAdminbySuperAdmin);
